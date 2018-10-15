@@ -2,7 +2,7 @@ server {
     listen       80;
     server_name  {{ item.value.servernames | join(" ") }} {{ ansible_default_ipv4["address"] }} localhost;
 
-    root   /var/www/{{ item.value.servernames[0] }}/public;
+    root   /var/www/{{ item.value.servernames[0] }}/current/public;
     index index.php;
 
     access_log  /var/log/nginx/{{ item.value.servernames[0] }}-access.log;
