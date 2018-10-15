@@ -1,0 +1,25 @@
+# file: roles/common/tasks/main.yml
+- name: Upgrade all packages
+  apt: upgrade=full update_cache=yes
+  when: ansible_distribution == 'Ubuntu' or ansible_distribution == 'Debian'
+
+- name: Make sure git is installed
+  tags: git
+  apt: name=git state=present
+  when: ansible_distribution == 'Ubuntu' or ansible_distribution == 'Debian'
+
+- name: Make sure unzip is installed
+  tags: unzip
+  apt: name=unzip state=present
+  when: ansible_distribution == 'Ubuntu' or ansible_distribution == 'Debian'
+
+- name: Remove require tty
+  lineinfile:
+    dest: /etc/sudoers
+    line: 'Defaults    requiretty'
+    state: absent
+
+- include: cron-apt.yml
+  when: ansible_distribution == 'Ubuntu' or ansible_distribution == 'Debian'
+- include: swap.yml
+- include: user.yml

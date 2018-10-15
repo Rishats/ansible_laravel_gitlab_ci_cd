@@ -1,0 +1,18 @@
+ - name: Passlib install for htpassword and vps user create.
+   tags: system
+   apt: "pkg=python3-passlib state=present"
+
+ - name: Create a login user for your VPS
+   tags: system
+   with_dict: "{{ system_user }}"
+   user:
+    name: "{{ system_user.user_login }}"
+    password: "{{ system_user.user_password | password_hash('sha512') }}"
+    groups: # Empty by default, here we give it some groups
+     - sudo
+     - www-data
+    state: present
+    shell: /bin/bash       # Defaults to /bin/bash
+    system: no             # Defaults to no
+    createhome: yes        # Defaults to yes
+    home: /home/{{ system_user.user_login }}  # Defaults to /home/<username>

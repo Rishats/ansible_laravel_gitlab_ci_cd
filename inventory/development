@@ -1,0 +1,7 @@
+# file: development
+
+[webservers]
+vps_for_laravel_project ansible_ssh_host=18.197.57.246 ansible_ssh_port=22 ansible_ssh_user=ubuntu ansible_python_interpreter=/usr/bin/python3
+
+[mysqlservers]
+vps_for_laravel_project ansible_ssh_host=18.197.57.246  ansible_ssh_port=22 ansible_ssh_user=ubuntu ansible_python_interpreter=/usr/bin/python3

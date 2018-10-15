@@ -1,0 +1,72 @@
+# file: roles/webtier/tasks/letsencrypt.yml
+- name: stop nginx service
+  tags: letsencrypt
+  service: name=nginx state=stopped
+
+- name: Install certbot
+  tags: letsencrypt
+  apt: name=certbot state=present
+
+- name: Install python-cerbot-nginx
+  tags: letsencrypt
+  apt: name=python-certbot-nginx state=present
+
+- name: Check if Diffie-Hellman group exists
+  tags: letsencrypt2
+  stat:
+    path: /etc/ssl/certs/dhparam.pem
+  register: group_exists
+
+- name: Generate a strong 2048 bit Diffie-Hellman group
+  tags: letsencrypt2
+  shell: openssl dhparam -out /etc/ssl/certs/dhparam.pem 2048
+  when: group_exists.stat.exists == false
+
+- name: Install / renew certificates for production
+  tags: letsencrypt
+  shell: certbot certonly --nginx --email {{ letsencrypt_email }} --agree-tos --renew-by-default -d {{ item.value.servernames[0] }} -d www.{{ item.value.servernames[0] }}
+  with_dict: "{{ virtualhosts }}"
+  
+- name: Install / renew certificates for testing
+  tags: letsencrypt
+  shell: certbot certonly --nginx --email {{ letsencrypt_email }} --agree-tos --renew-by-default -d testing.{{ item.value.servernames[0] }} -d www.testing.{{ item.value.servernames[0] }}
+  with_dict: "{{ virtualhosts }}"
+
+- name: Install / renew certificates for staging
+  tags: letsencrypt
+  shell: certbot certonly --nginx --email {{ letsencrypt_email }} --agree-tos --renew-by-default -d staging.{{ item.value.servernames[0] }} -d www.staging.{{ item.value.servernames[0] }}
+  with_dict: "{{ virtualhosts }}"
+
+- name: Make sure SSL nginx virtual hosts are configured for testing
+  tags: letsencrypt
+  template: src=nginx-ssl-virtualhost-testing.conf.j2 dest=/etc/nginx/conf.d/testing.{{ item.value.servernames[0] }}.conf
+  with_dict: "{{ virtualhosts }}"
+  when: enable_ssl|default(false)|bool == true
+
+- name: Make sure SSL nginx virtual hosts are configured for staging
+  tags: letsencrypt
+  template: src=nginx-ssl-virtualhost-staging.conf.j2 dest=/etc/nginx/conf.d/staging.{{ item.value.servernames[0] }}.conf
+  with_dict: "{{ virtualhosts }}"
+  when: enable_ssl|default(false)|bool == true
+
+- name: Make sure SSL nginx virtual hosts are configured for production
+  tags: letsencrypt
+  template: src=nginx-ssl-virtualhost.conf.j2 dest=/etc/nginx/conf.d/{{ item.value.servernames[0] }}.conf
+  with_dict: "{{ virtualhosts }}"
+  when: enable_ssl|default(false)|bool == true
+
+- name: Add auto renewal for certificates to crontab
+  tags: letsencrypt
+  cron:
+    name: "Weekly check for certificates"
+    special_time: weekly
+    job: /usr/bin/certbot renew --post-hook "service nginx restart"
+
+- name: Kill PID which use 80 port.
+  ignore_errors: yes
+  tags: letsencrypt
+  raw: sudo fuser -k 80/tcp
+
+- name: Start nginx service
+  tags: letsencrypt
+  service: name=nginx state=started

@@ -1,0 +1,2 @@
+# file: roles/queuetier/tasks/main.yml
+- include: redis.yml

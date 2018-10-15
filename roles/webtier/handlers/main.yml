@@ -1,0 +1,15 @@
+# file: roles/webtier/handlers/main.yml
+- name: Restart nginx
+  service: name=nginx state=restarted
+
+- name: Restart php-fpm
+  service: name=php-fpm state=restarted
+
+- name: Restart php-fpm (Debian)
+  service: name=php7.2-fpm state=restarted
+
+- name: start nginx service
+  service: name=nginx state=started
+
+- name: stop nginx service
+  service: name=nginx state=stopped
